@@ -1,0 +1,7 @@
+name: "kush"
+version: "0.2.0"
+usage: "run kustomize post-renderer on embedded kustomizations/ dir"
+description: "A helm plugin that runs kustomize on scripts in the chart kustomizations/ directory"
+ignoreFlags: false
+#command: "$HELM_BIN --host $TILLER_HOST list --short --max 1 --date -r"
+command: "$HELM_PLUGIN_DIR/bin/run.sh"
