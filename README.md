@@ -22,7 +22,11 @@ and source included scripts during deployment. This is less secure than ytt and 
 in charts as part of the deployment process), but very flexible and accessible. Interpolation must be enabled with
 `--kush-interpolate`. 
 
-**WARNING** - Helm post-rendering is known not to work with resources that utilize helm hooks, see [https://github.com/helm/helm/issues/7891](https://github.com/helm/helm/issues/7891) for details.
+## Known Bugs
+
+Helm post-rendering is known not to work with resources that utilize helm hooks, see [https://github.com/helm/helm/issues/7891](https://github.com/helm/helm/issues/7891) for details.
+
+Interpolation/scripting errors frequently result in silent output (gobbled up by helm I think). 
 
 ## Prerequisites and Installation
 
@@ -34,7 +38,7 @@ Install with:
 helm plugin install https://github.com/oneilsh/helm-kush
 ```
 
-## Usage: Chart Install
+## Basic Usage: Chart Install
 
 Kush-enabled charts will contain a `kush` directory with kustomize resources for post-rendering. Helm kush 
 currently only supports post-rendering for `install`, `upgrade`, and `template`. (Charts withough `kush` directories
@@ -62,6 +66,15 @@ anything in the charts' kustomizations, because `--values` is incorporated durin
 before kustomize is applied).
 
 This example requires the addition of `--kush-interpolate` to allow interpolation scripts etc. to run. 
+
+```
+helm kush template myrelease kush-examples/interpolation-example --kush-interpolate
+```
+
+This also works with `--values` and provides opportunities for scripting and interpolation there as well (more below).
+
+
+## Usage: Chart Authoring
 
 
 
