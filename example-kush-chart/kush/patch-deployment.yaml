@@ -1,0 +1,15 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: RELEASE-NAME-example-kush-chart
+spec:
+  replicas: 2
+  template:
+    spec:
+      containers:
+        - name: example-kush-chart
+          env:
+            - name: ADMIN_PASSWORD
+              value: $ADMIN_INIT_PASSWORD
+            - name: ADMIN_USERNAME
+              value: $USER
