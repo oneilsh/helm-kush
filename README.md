@@ -12,7 +12,7 @@ charts included as dependencies frequently don't expose as much [flexibility as 
 via `values.yaml`. Helm-3's `--post-renderer` isn't batteries-included though; the sub-chart user must write a (usually simple) 
 post-rending script and maintain kustomize resources independently. 
 
-At the same time, various yaml-based tools (including Helm and kustomize) [eschew](https://kubernetes-sigs.github.io/kustomize/faq/eschewedfeatures/#build-time-side-effects-from-cli-args-or-env-variables) all but basic templating functions,
+At the same time, various yaml-based tools (including Helm and kustomize) [deliberately eschew](https://kubernetes-sigs.github.io/kustomize/faq/eschewedfeatures/#build-time-side-effects-from-cli-args-or-env-variables) all but basic templating functions,
 preferring to keep configuration 'simple' (*cough*) and deterministic. Tools like [ytt](https://get-ytt.io/)
 and [dhall](https://github.com/dhall-lang) bring sophisticated scripting abilities to yaml, but are complex domain-specific
 languages. 
@@ -39,3 +39,6 @@ currently only supports post-rendering for `install`, `upgrade`, and `template`.
 are treated as normally.)
 
 Examples:
+
+```
+```
