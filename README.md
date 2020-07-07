@@ -1,4 +1,4 @@
-# helm-kush
+# helm-kush (kustomize-sh)
 
 Helm plugin for in-chart kustomizations and optional bash interpolation. 
 
@@ -66,7 +66,7 @@ Some example runs:
 This example uses kustomize to modify the deployment containers' environment variables:
 
 ```
-helm kush template myrelease kush-examples/example-kush-chart
+helm kush template myrelease kush-examples/basic-example
 ```
 
 This works with additional `--values` specifications or other helm flags (but note that `--values` entries do *not* override 
@@ -79,10 +79,94 @@ This example requires the addition of `--kush-interpolate` to allow interpolatio
 helm kush template myrelease kush-examples/interpolation-example --kush-interpolate
 ```
 
-This also works with `--values` and provides opportunities for scripting and interpolation there as well (more below).
+This also works with `--values` (only via local file, not URL like standard helm) and provides opportunities for scripting and interpolation there as well (more below).
+
+```
+helm kush template myrelease kush-examples/interpolation-example --kush-interpolate \
+  --values <(wget https://raw.githubusercontent.com/oneilsh/helm-kush/master/example-charts/interpolation-example/custom-values.yaml -qO -)
+```
 
 
 ## Usage: Chart Authoring
+
+### Basic Kustomization
+
+Let's start by creating a basic chart with `helm create`, and remove the `templates/tests/test-connection.yaml` since it uses a helm hook 
+and these are currently [buggy](https://github.com/helm/helm/issues/7891) with `--post-renderer`.
+
+```
+helm create basic-chart
+rm basic-chart/templates/tests/test-connection.yaml
+```
+
+Next create a `kush` directory to hold kustomization files. 
+
+```
+mkdir basic-chart/kush
+```
+
+We'll add a `kustomization.yaml` file (required name), which must have at least `helm-template-output.yaml` listed as a resource (the result
+of running `helm template` on the base chart); we'll also modify the deployment so we'll specify a patch with `patch-deployment.yaml`:
+
+**`basic-chart/kush/kustomization.yaml`**:
+```
+resources:
+    - helm-template-output.yaml
+patchesStrategicMerge:
+    - patch-deployment.yaml
+```
+
+For the deployment patch, we'll suppose that our container accepts initial admin credentials via environment variable, but these
+aren't exposed for configuration by the chart (and we'll suppose we're working with a dependency chart). 
+
+Note that when a chart specifies that the release name is part of the resource name (a common practice with helm charts),
+we use `RELEASE-NAME` as a placeholder. 
+
+**`basic-chart/kush/patch-deployment.yaml`**:
+```
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: RELEASE-NAME-basic-example
+spec:
+  template:
+    spec:
+      replicaCount: 1
+      containers:
+        - name: basic-example
+          env:
+            - name: ADMIN_PASSWORD
+              value: temporary-pass
+            - name: ADMIN_USERNAME
+              value: admin
+```
+
+And that's it; `basic-chart` can now be deployed with `helm kush` without the need for forking the upstream chart, and we get kustomize 
+resources 'bundled' with the chart. This can be handy in cases where kustomize is used with a custom chart but the files need to match
+the chart version. 
+
+### Interpolation
+
+Start with a similar setup as above:
+
+```
+helm create interpolate-chart
+rm interpolate-chart/templates/tests/test-connection.yaml
+mkdir interpolate-chart/kush
+```
+
+And the same `kustomization.yaml` file.
+
+**`interpolate-chart/kush/kustomization.yaml`**:
+```
+resources:
+    - helm-template-output.yaml
+patchesStrategicMerge:
+    - patch-deployment.yaml
+```
+
+
+
 
 
 
