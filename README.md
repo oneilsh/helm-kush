@@ -1,6 +1,8 @@
 # helm-kush
 
-Helm plugin for in-chart kustomizations and optional bash interpolation.
+Helm plugin for in-chart kustomizations and optional bash interpolation. 
+
+Note: this is early-stage software with security and reproducibility considerations. 
 
 ## Overview
 
@@ -22,11 +24,16 @@ and source included scripts during deployment. This is less secure than ytt and 
 in charts as part of the deployment process), but very flexible and accessible. Interpolation must be enabled with
 `--kush-interpolate`. 
 
-## Known Bugs
+## Known Bugs / TODOs
 
 Helm post-rendering is known not to work with resources that utilize helm hooks, see [https://github.com/helm/helm/issues/7891](https://github.com/helm/helm/issues/7891) for details.
 
 Interpolation/scripting errors frequently result in silent output (gobbled up by helm I think). 
+
+Errors don't stop further processing when they should.
+
+Using `--generate-name` is not supported, and parsing of release name and chart currently assumes these are
+the first options, as in `helm kush template my-release-name chart-repo/chart ...`. 
 
 ## Prerequisites and Installation
 
@@ -50,6 +57,7 @@ First, add this repo as a helm chart repo and see the example chart:
 
 ```
 helm repo add kush-examples https://oneilsh.github.io/helm-kush/
+helm repo update
 helm search repo kush-examples
 ```
 

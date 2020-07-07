@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+set -e   # this doesnt seem to help..
+
 # some helpers for color
 export black="$(tput setaf 0)"
 export red="$(tput setaf 1)"
@@ -11,16 +13,21 @@ export cyan="$(tput setaf 6)"
 export white="$(tput setaf 7)"
 
 function usage {
-  echo "${yellow}Helm kush in intended to work with charts with embedded kustomizations.${white}"
-  echo "${yellow}See https://github.com/oneilsh/helm-kush for details.${white}"
-  echo ""
-  echo "${yellow}Usage: helm kush <install|upgrade|template> [NAME] [CHART] [FLAGS] [--kush-interpolate] ...${white}"
+  echo "${yellow}Helm kush in intended to work with charts with embedded kustomizations.${white}" 1>&2
+  echo "${yellow}See https://github.com/oneilsh/helm-kush for details.${white}" 1>&2
+  echo "" 1>&2
+  echo "${yellow}Usage: helm kush <install|upgrade|template> [NAME] [CHART] [FLAGS] [--kush-interpolate] ...${white}" 1>&2
 }
 
 # check if we're running as helm kush (install|upgrade|template)
 if ! echo "$1" | grep -Eqs "^((install)|(upgrade)|(template))$"; then
   usage 
   exit 1
+fi
+
+if echo "$@" | grep -Esq '\--generate-name'; then
+  echo "${red}Sorry, helm kush does not support using --generate-name :( ${white}" 1>&2
+  exit 1 
 fi
 
 # parse the helm command, chart, and release name (if given)
@@ -31,8 +38,8 @@ fi
 INTERPOLATE="false"
 CMD=$1
 CHART=""
-RELEASE_NAME="RELEASE-NAME"
 FLAGS="${@:3}"
+RELEASE_NAME="RELEASE-NAME"
 if echo "$3" | grep -Eqs "(^--)|(^$)"; then
    CHART=$2
 else
@@ -40,6 +47,7 @@ else
    CHART=$3
    FLAGS="${@:4}"
 fi
+
 
 # see if the user passes a --kush-interpolate flag; if so, drop it from the flags
 if echo "$FLAGS" | grep -Eqs -- '--kush-interpolate'; then
@@ -94,7 +102,7 @@ if [ -d "$CHARTDIR/kush" ]; then
     done
   fi
 
-  $HELM_BIN $CMD "$CHARTDIR" $FLAGS --post-renderer="$HELM_PLUGIN_DIR/bin/post-renderer.sh"
+  $HELM_BIN $CMD "$RELEASE_NAME" "$CHARTDIR" $FLAGS --post-renderer="$HELM_PLUGIN_DIR/bin/post-renderer.sh"
 
   if [ "$INTERPOLATE" == "true" ]; then
     for FILE in $(ls -1 $WORK_DIR); do
@@ -110,11 +118,11 @@ if [ -d "$CHARTDIR/kush" ]; then
 
 else 
   echo "${red}Error: helm kush called on chart with no kush/ directory, try standard '$HELM_BIN $CMD'.${white}" 1>&2
-  echo ""
+  echo "" 1>&2
   usage
 fi
 
 
-#rm -rf $TEMPDIR
+rm -rf $TEMPDIR
 
 

@@ -1,6 +1,8 @@
 #!/bin/bash
 
-cat <&0 > $WORK_DIR/helm-template-output.yaml
+set -e   # this doesnt seem to help..
+
+cat <&0 | sed "s/$RELEASE_NAME/RELEASE-NAME/" > $WORK_DIR/helm-template-output.yaml
 
 
 
