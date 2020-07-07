@@ -1,0 +1,15 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: RELEASE-NAME-basic-example
+spec:
+  template:
+    spec:
+      replicaCount: 1
+      containers:
+        - name: basic-example
+          env:
+            - name: ADMIN_PASSWORD
+              value: temporary-pass
+            - name: ADMIN_USERNAME
+              value: admin

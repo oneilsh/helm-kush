@@ -40,5 +40,20 @@ are treated as normally.)
 
 Examples:
 
+First, add this repo as a helm chart repo and see the example chart:
+
 ```
+helm repo add kush-examples https://oneilsh.github.io/helm-kush/
+helm search repo kush-examples
 ```
+
+Some example runs:
+
+```
+helm kush template myrelease kush-examples/example-kush-chart
+```
+
+
+
+
+

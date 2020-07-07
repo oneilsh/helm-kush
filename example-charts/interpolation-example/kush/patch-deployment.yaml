@@ -1,12 +1,12 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: RELEASE-NAME-example-kush-chart
+  name: RELEASE-NAME-interpolation-example
 spec:
   template:
     spec:
       containers:
-        - name: example-kush-chart
+        - name: interpolation-example
           env:
             - name: ADMIN_PASSWORD
               value: $ADMIN_INIT_PASSWORD        --kush-interpolate

@@ -1,5 +1,5 @@
 apiVersion: v2
-name: example-kush-chart
+name: interpolation-example
 description: An example kush-enabled helm chart.
 
 # A chart can be either an 'application' or a 'library' chart.

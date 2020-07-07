@@ -1,0 +1,5 @@
+resources:
+    # helm-template-output.yaml will be created by kush during deployment from helm template, so this line is required
+    - helm-template-output.yaml
+patchesStrategicMerge:
+    - patch-deployment.yaml
