@@ -10,10 +10,17 @@ export magenta="$(tput setaf 5)"
 export cyan="$(tput setaf 6)"
 export white="$(tput setaf 7)"
 
+function usage {
+  echo "${yellow}Helm kush in intended to work with charts with embedded kustomizations.${white}"
+  echo "${yellow}See https://github.com/oneilsh/helm-kush for details.${white}"
+  echo ""
+  echo "${yellow}Usage: helm kush <install|upgrade|template> [NAME] [CHART] [FLAGS] [--kush-interpolate] ...${white}"
+}
+
 # check if we're running as helm kush (install|upgrade|template)
 if ! echo "$1" | grep -Eqs "^((install)|(upgrade)|(template))$"; then
-   echo "${red}Sorry, helm kush is only avaible for install, upgrade, and template.${white}" 1>&2
-   exit 1
+  usage 
+  exit 1
 fi
 
 # parse the helm command, chart, and release name (if given)
@@ -103,6 +110,8 @@ if [ -d "$CHARTDIR/kush" ]; then
 
 else 
   echo "${red}Error: helm kush called on chart with no kush/ directory, try standard '$HELM_BIN $CMD'.${white}" 1>&2
+  echo ""
+  usage
 fi
 
 
