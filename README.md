@@ -22,6 +22,8 @@ and source included scripts during deployment. This is less secure than ytt and 
 in charts as part of the deployment process), but very flexible and accessible. Interpolation must be enabled with
 `--kush-interpolate`. 
 
+**WARNING** - Helm post-rendering is known not to work with resources that utilize helm hooks, see [https://github.com/helm/helm/issues/7891](https://github.com/helm/helm/issues/7891) for details.
+
 ## Prerequisites and Installation
 
 Helm 3.X and kubectl version 1.14 or above. 
@@ -49,9 +51,17 @@ helm search repo kush-examples
 
 Some example runs:
 
+This example uses kustomize to modify the deployment containers' environment variables:
+
 ```
 helm kush template myrelease kush-examples/example-kush-chart
 ```
+
+This works with additional `--values` specifications or other helm flags (but note that `--values` entries do *not* override 
+anything in the charts' kustomizations, because `--values` is incorporated during chart rendering 
+before kustomize is applied).
+
+This example requires the addition of `--kush-interpolate` to allow interpolation scripts etc. to run. 
 
 
 

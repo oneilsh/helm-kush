@@ -16,8 +16,6 @@ if [ "$INTERPOLATE" == "true" ]; then
     fi
   done
 else
-  echo UH	
-  echo $WORK_DIR/helm-template-output.yaml
   kubectl kustomize $WORK_DIR | sed "s/RELEASE-NAME/$RELEASE_NAME/g"
 fi	
 

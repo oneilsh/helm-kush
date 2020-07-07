@@ -1,25 +1,25 @@
 apiVersion: v1
 entries:
-  example-kush-chart:
+  basic-example:
   - apiVersion: v2
     appVersion: 1.16.0
-    created: "2020-07-07T13:39:41.738897-07:00"
+    created: "2020-07-07T13:55:13.943532-07:00"
     description: An example kush-enabled helm chart.
-    digest: 4b480dfc189834e0ebbb114c9a1de8a510fe8df7078a95b2107105b97992d535
-    name: example-kush-chart
+    digest: 599ba42e149958037d565463739b220db47bcef6c67fb4b51739f147df18efab
+    name: basic-example
     type: application
     urls:
-    - example-kush-chart-0.1.0.tgz
+    - basic-example-0.1.0.tgz
     version: 0.1.0
   interpolation-example:
   - apiVersion: v2
     appVersion: 1.16.0
-    created: "2020-07-07T13:39:41.739443-07:00"
+    created: "2020-07-07T13:55:13.944589-07:00"
     description: An example kush-enabled helm chart.
-    digest: 869c581ea50673b00305fbc1cbb7bcad8ac47fc9dd70c3bcd22ace901ed1439e
+    digest: d7f3b7aeabd90b4f04b3cd3a1893066ef9f76abedeee12251d84ecde9b6244a7
     name: interpolation-example
     type: application
     urls:
     - interpolation-example-0.1.0.tgz
     version: 0.1.0
-generated: "2020-07-07T13:39:41.738132-07:00"
+generated: "2020-07-07T13:55:13.942802-07:00"
