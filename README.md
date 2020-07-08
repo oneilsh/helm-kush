@@ -198,7 +198,22 @@ ADMIN_INIT_PASSWORD=passwd ADMIN_INIT_USERNAME=oneils helm kush template myrelea
 The relevant section of output:
 
 ```
-
+    spec:
+      containers:
+      - env:
+        - name: ADMIN_PASSWORD
+          value: passwd
+        - name: ADMIN_USERNAME
+          value: oneils
+        image: nginx:1.16.0
+        imagePullPolicy: IfNotPresent
+        livenessProbe:
+          httpGet:
+            path: /
+            port: http
+        name: interpolation-example
+        ports:
+        - containerPort: 80
 ```
 
 Why would one use environment variables when `--set` is made for this purpose? You likely wouldn't. But then, `--set` can't be used with
@@ -208,5 +223,40 @@ Inline interpolation is one thing, but we may want to run more complex scripts b
 interpolation. This is enabled by adding `.pre.sh` and/or `.post.sh` files to the `kush` directory; `.pre.sh` files are run 
 (sourced, actually, so they can setup variables etc.) prior to templating, kustomization, and interpolation, and `.pre.sh` files are run after.
 
-Let's use these to set the 
+Let's use a `.pre.sh` file to default the username to the running user (`$USER`) and password to a randomly generated passphrase.
+
+**`interpolation-example/kush/00_admin_pw.pre.sh`**:
+```
+# the sed is to remove trailing windows-newline returned by server
+ADMIN_INIT_USERNAME=$USER
+ADMIN_INIT_PASSWORD=$(wget "https://makemeapassword.ligos.net/api/v1/passphrase/plain?whenUp=StartOfWord&sp=F&pc=1&wc=2&sp=y&maxCh=20" -qO- | sed -e 's/\r//g')
+```
+
+Since each deployment will produce different output, it may make sense to also add a line like 
+
+```
+echo "Your username/password are $ADMIN_INIT_USERNAME/$ADMIN_INIT_PASSWORD, write them down!" >> $CHARTDIR/templates/NOTES.txt
+```
+
+which will modify the (temporary) to-be-deployed copy of the chart's `NOTES.txt` to print additional usage information. However, if these values
+change again during the templating/kustomization/interpolation steps (and this is possible) this information may not be accurate. 
+
+So, we'll just print the information directly in a `.post.sh` script:
+
+**`interpolation-example/kush/00_adjust_notes.post.sh`**:
+```
+echo "${yellow}Your username/password are $ADMIN_INIT_USERNAME/$ADMIN_INIT_PASSWORD, write them down!${white}"
+```
+
+In the above we've used `$CHARTDIR` (which is a temporary working copy of the chart) and some color variables; here are the ones available
+for scripts and interpolations:
+
+* `$CHARTDIR` - location of working chart copy
+* `$RELEASE_NAME` - the given release name (holds `RELEASE-NAME` if not given, using `--generate-name` is not supported)
+* `$CHART` - the chart as given, e.g. `kush-examples/interpolation-example` (from repo) or `https://oneilsh.github.io/helm-kush/interpolation-example-0.1.0.tgz` (direct URL) or just `interpolation-example` (local path)
+* `$CHARTNAME` - the name of the chart
+
+Other environment variables are provided by the helm plugin architecture, see the list [here](https://helm.sh/docs/topics/plugins/#environment-variables). 
+
+
 

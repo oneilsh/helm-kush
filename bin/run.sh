@@ -89,6 +89,8 @@ if [ -d "$CHARTDIR/kush" ]; then
   export RELEASE_NAME=$RELEASE_NAME
   export INTERPOLATE=$INTERPOLATE
   export CHARTDIR=$CHARTDIR
+  export CHART=$CHART
+  export CHARTNAME=$CHARTNAME
 
   if [ "$INTERPOLATE" == "true" ]; then
     for FILE in $(ls -1 $WORK_DIR); do
