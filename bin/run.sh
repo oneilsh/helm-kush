@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -e   # this doesnt seem to help..
+#set -e   # this doesnt seem to help..
 
 # some helpers for color
 export black="$(tput setaf 0)"
@@ -56,7 +56,7 @@ if echo "$FLAGS" | grep -Eqs -- '--kush-interpolate'; then
 fi
 
 # need a list of --values files to possibly pre-interpolate with #$ syntax
-USER_VALUES_FILES=()
+USER_VALUES_FILES=""
 USERFILES=false
 for FLAG in "$@"; do
   if [ "$FLAG" == "-f" ] || [ "$FLAG" == "--values" ]; then
@@ -64,9 +64,10 @@ for FLAG in "$@"; do
   elif echo "$FLAG" | grep -Eqs "(^--)"; then
     USERFILES=false
   elif [ "$USERFILES" == "true" ]; then
-    USER_VALUES_FILES+=("$FLAG")    
+    USER_VALUES_FILES="$USER_VALUES_FILES"$'\n'"$FLAG"
   fi
 done
+
 
 # get the chart name (gives the folder name after untarring)
 # make a temp directory to put a copy in
@@ -86,14 +87,15 @@ fi
 # if there's a kush dir in the chart, we've got work to do
 if [ -d "$CHARTDIR/kush" ]; then
   export WORK_DIR="$CHARTDIR/kush/"
-  export RELEASE_NAME=$RELEASE_NAME
-  export INTERPOLATE=$INTERPOLATE
-  export CHARTDIR=$CHARTDIR
-  export CHART=$CHART
-  export CHARTNAME=$CHARTNAME
+  export RELEASE_NAME
+  export INTERPOLATE
+  export CHARTDIR
+  export CHART
+  export CHARTNAME
+  export USER_VALUES_FILES
 
   if [ "$INTERPOLATE" == "true" ]; then
-    for VALUEFILE in "${USER_VALUES_FILES[@]}"; do
+    for VALUEFILE in $USER_VALUES_FILES; do
       source <(cat "$VALUEFILE" | grep -E '^[[:blank:]]*#\^\$' | sed 's/^[[:blank:]]*#\^\$//')
     done
 
@@ -102,26 +104,26 @@ if [ -d "$CHARTDIR/kush" ]; then
         source "$WORK_DIR/$FILE"
       fi
     done
- 
-    for VALUEFILE in "${USER_VALUES_FILES[@]}"; do
+    
+    for VALUEFILE in $USER_VALUES_FILES; do
       source <(cat "$VALUEFILE" | grep -E '^[[:blank:]]*#\$' | sed 's/^[[:blank:]]*#\$//')
     done
   fi
 
   $HELM_BIN $CMD "$RELEASE_NAME" "$CHARTDIR" $FLAGS --post-renderer="$HELM_PLUGIN_DIR/bin/post-renderer.sh"
-
+  
   if [ "$INTERPOLATE" == "true" ]; then
-    for VALUEFILE in "${USER_VALUES_FILES[@]}"; do
+    for VALUEFILE in $USER_VALUES_FILES; do
       source <(cat "$VALUEFILE" | grep -E '^[[:blank:]]*#\^%' | sed 's/^[[:blank:]]*#\^%//')
     done
-
+    
     for FILE in $(ls -1 $WORK_DIR); do
       if echo "$FILE" | grep -Eqs '\.post\.sh$'; then
         source "$WORK_DIR/$FILE"
       fi
     done
-   
-    for VALUEFILE in "${USER_VALUES_FILES[@]}"; do
+
+    for VALUEFILE in $USER_VALUES_FILES; do
       source <(cat "$VALUEFILE" | grep -E '^[[:blank:]]*#%' | sed 's/^[[:blank:]]*#%//')
     done
   fi
@@ -134,5 +136,4 @@ fi
 
 
 rm -rf $TEMPDIR
-
 

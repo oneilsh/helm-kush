@@ -1,9 +1,8 @@
 #!/bin/bash
 
-set -e   # this doesnt seem to help..
+#set -e   # this doesnt seem to help..
 
 cat <&0 | sed "s/$RELEASE_NAME/RELEASE-NAME/" > $WORK_DIR/helm-template-output.yaml
-
 
 
 if [ "$INTERPOLATE" == "true" ]; then
