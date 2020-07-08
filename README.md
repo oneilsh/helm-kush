@@ -95,20 +95,20 @@ Let's start by creating a basic chart with `helm create`, and remove the `templa
 and these are currently [buggy](https://github.com/helm/helm/issues/7891) with `--post-renderer`.
 
 ```
-helm create basic-chart
-rm basic-chart/templates/tests/test-connection.yaml
+helm create basic-example
+rm basic-example/templates/tests/test-connection.yaml
 ```
 
 Next create a `kush` directory to hold kustomization files. 
 
 ```
-mkdir basic-chart/kush
+mkdir basic-example/kush
 ```
 
 We'll add a `kustomization.yaml` file (required name), which must have at least `helm-template-output.yaml` listed as a resource (the result
 of running `helm template` on the base chart); we'll also modify the deployment so we'll specify a patch with `patch-deployment.yaml`:
 
-**`basic-chart/kush/kustomization.yaml`**:
+**`basic-example/kush/kustomization.yaml`**:
 ```
 resources:
     - helm-template-output.yaml
@@ -122,7 +122,7 @@ aren't exposed for configuration by the chart (and we'll suppose we're working w
 Note that when a chart specifies that the release name is part of the resource name (a common practice with helm charts),
 we use `RELEASE-NAME` as a placeholder. 
 
-**`basic-chart/kush/patch-deployment.yaml`**:
+**`basic-example/kush/patch-deployment.yaml`**:
 ```
 apiVersion: apps/v1
 kind: Deployment
@@ -141,7 +141,7 @@ spec:
               value: admin
 ```
 
-And that's it; `basic-chart` can now be deployed with `helm kush` without the need for forking the upstream chart, and we get kustomize 
+And that's it; `basic-example` can now be deployed with `helm kush` without the need for forking the upstream chart, and we get kustomize 
 resources 'bundled' with the chart. This can be handy in cases where kustomize is used with a custom chart but the files need to match
 the chart version. 
 
@@ -150,14 +150,14 @@ the chart version.
 Start with a similar setup as above:
 
 ```
-helm create interpolate-chart
-rm interpolate-chart/templates/tests/test-connection.yaml
-mkdir interpolate-chart/kush
+helm create interpolation-example
+rm interpolation-example/templates/tests/test-connection.yaml
+mkdir interpolation-example/kush
 ```
 
 And the same `kustomization.yaml` file.
 
-**`interpolate-chart/kush/kustomization.yaml`**:
+**`interpolation-example/kush/kustomization.yaml`**:
 ```
 resources:
     - helm-template-output.yaml
@@ -165,10 +165,48 @@ patchesStrategicMerge:
     - patch-deployment.yaml
 ```
 
+The difference is in `patch-deployment.yaml`, where we fill the values from environment variables 
+(or any bash-evaluatable expression, e.g. `$(expr 8000 + $RANDOM % 1000)` for a random number between 8000 and 8999).
+To enable interpolation and protect other lines, we flag the line somewhere at the end 
+with `--kush-interpolate` (which will be stripped). We also have to add the `--kush-interpolate` flag to the helm command to enable
+any interpolation.
 
+**`interpolation-example/kush/patch-deployment.yaml`**:
+```
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: RELEASE-NAME-interpolation-example
+spec:
+  template:
+    spec:
+      containers:
+        - name: interpolation-example
+          env:
+            - name: ADMIN_PASSWORD
+              value: $ADMIN_INIT_PASSWORD        --kush-interpolate
+            - name: ADMIN_USERNAME
+              value: $ADMIN_INIT_USERNAME        --kush-interpolate
+```
 
+Now we can run the chart with these variables set:
 
+```
+ADMIN_INIT_PASSWORD=passwd ADMIN_INIT_USERNAME=oneils helm kush template myrelease interpolation-example --kush-interpolate
+```
 
+The relevant section of output:
 
+```
 
+```
+
+Why would one use environment variables when `--set` is made for this purpose? You likely wouldn't. But then, `--set` can't be used with
+a post-renderer, and you may not want to keep individual kustomize yaml for every deployment. 
+
+Inline interpolation is one thing, but we may want to run more complex scripts before or after the templating, kustomization, and
+interpolation. This is enabled by adding `.pre.sh` and/or `.post.sh` files to the `kush` directory; `.pre.sh` files are run 
+(sourced, actually, so they can setup variables etc.) prior to templating, kustomization, and interpolation, and `.pre.sh` files are run after.
+
+Let's use these to set the 
 
