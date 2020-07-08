@@ -1,5 +1,5 @@
 name: "kush"
-version: "0.2.0"
+version: "0.3.0"
 usage: "run kustomize post-renderer on embedded kustomizations/ dir"
 description: "A helm plugin that runs kustomize on scripts in the chart kustomizations/ directory"
 ignoreFlags: false

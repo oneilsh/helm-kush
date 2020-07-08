@@ -346,6 +346,20 @@ custom post-processing.
 #% helm list --all-namespaces
 ```
 
+In some cases it may be necessary to run commands *before* `.pre.sh` and `.post.sh`; lines prefixed with `#^$` and `#^%` 
+are for these situations. For example, if you require some configuration set via `--values` and want to check it in a `.pre.sh`
+script, these would be the place to do so. 
+
+**`interpolation-example/kush/02_values_check.pre.sh`**:
+```
+if [ -z "$PATH" ]; then
+  echo "${red}Error: you must set \$PATH in a supplied --values file. Example: ${white}" 1>&2
+  echo "${red}#^$ PATH=/api${white}"
+  exit 1
+fi
+```
+
+
 ### Summary
 
 In summary, the order of operations is:

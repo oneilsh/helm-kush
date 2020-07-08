@@ -93,6 +93,10 @@ if [ -d "$CHARTDIR/kush" ]; then
   export CHARTNAME=$CHARTNAME
 
   if [ "$INTERPOLATE" == "true" ]; then
+    for VALUEFILE in "${USER_VALUES_FILES[@]}"; do
+      source <(cat "$VALUEFILE" | grep -E '^[[:blank:]]*#\^\$' | sed 's/^[[:blank:]]*#\^\$//')
+    done
+
     for FILE in $(ls -1 $WORK_DIR); do
       if echo "$FILE" | grep -Eqs '\.pre\.sh$'; then
         source "$WORK_DIR/$FILE"
@@ -107,6 +111,10 @@ if [ -d "$CHARTDIR/kush" ]; then
   $HELM_BIN $CMD "$RELEASE_NAME" "$CHARTDIR" $FLAGS --post-renderer="$HELM_PLUGIN_DIR/bin/post-renderer.sh"
 
   if [ "$INTERPOLATE" == "true" ]; then
+    for VALUEFILE in "${USER_VALUES_FILES[@]}"; do
+      source <(cat "$VALUEFILE" | grep -E '^[[:blank:]]*#\^%' | sed 's/^[[:blank:]]*#\^%//')
+    done
+
     for FILE in $(ls -1 $WORK_DIR); do
       if echo "$FILE" | grep -Eqs '\.post\.sh$'; then
         source "$WORK_DIR/$FILE"
