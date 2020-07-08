@@ -1,3 +1,20 @@
+Table of Contents
+=================
+
+   * [helm-kush (kustomize-sh)](#helm-kush-kustomize-sh)
+      * [Overview](#overview)
+      * [Known Bugs / TODOs](#known-bugs--todos)
+      * [Prerequisites and Installation](#prerequisites-and-installation)
+      * [Basic Usage: Chart Install](#basic-usage-chart-install)
+      * [Chart Authoring w/ Kustomization](#chart-authoring-w-kustomization)
+      * [Chart Authoring w/ Interpolation](#chart-authoring-w-interpolation)
+         * [Pre- and post- scripts](#pre--and-post--scripts)
+         * [Custom --values](#custom---values)
+         * [Summary](#summary)
+
+Created by [gh-md-toc](https://github.com/ekalinin/github-markdown-toc)
+
+
 # helm-kush (kustomize-sh)
 
 Helm plugin for in-chart kustomizations and optional bash interpolation. 
@@ -87,9 +104,8 @@ helm kush template myrelease kush-examples/interpolation-example --kush-interpol
 ```
 
 
-## Usage: Chart Authoring
 
-### Basic Kustomization
+## Chart Authoring w/ Kustomization
 
 Let's start by creating a basic chart with `helm create`, and remove the `templates/tests/test-connection.yaml` since it uses a helm hook 
 and these are currently [buggy](https://github.com/helm/helm/issues/7891) with `--post-renderer`.
@@ -145,7 +161,7 @@ And that's it; `basic-example` can now be deployed with `helm kush` without the 
 resources 'bundled' with the chart. This can be handy in cases where kustomize is used with a custom chart but the files need to match
 the chart version. 
 
-### Interpolation
+## Chart Authoring w/ Interpolation
 
 Start with a similar setup as above:
 
@@ -219,6 +235,10 @@ The relevant section of output:
 Why would one use environment variables when `--set` is made for this purpose? You likely wouldn't. But then, `--set` can't be used with
 a post-renderer, and you may not want to keep individual kustomize yaml for every deployment. 
 
+If your chart requires certain pre-reqs to properly build (as in this case), these checks can be built into a `.pre.sh` script (below).
+
+### Pre- and post- scripts
+
 Inline interpolation is one thing, but we may want to run more complex scripts before or after the templating, kustomization, and
 interpolation. This is enabled by adding `.pre.sh` and/or `.post.sh` files to the `kush` directory; `.pre.sh` files are run 
 (sourced, actually, so they can setup variables etc.) prior to templating, kustomization, and interpolation, and `.pre.sh` files are run after.
@@ -230,6 +250,17 @@ Let's use a `.pre.sh` file to default the username to the running user (`$USER`)
 # the sed is to remove trailing windows-newline returned by server
 ADMIN_INIT_USERNAME=$USER
 ADMIN_INIT_PASSWORD=$(wget "https://makemeapassword.ligos.net/api/v1/passphrase/plain?whenUp=StartOfWord&sp=F&pc=1&wc=2&sp=y&maxCh=20" -qO- | sed -e 's/\r//g')
+```
+
+As mentioned above, if requirements must be in place for proper interpolation a `.pre.sh` file can be used to check. (But as these are run
+as the first step, it's difficult to determine if they will be set in later steps.)
+
+**`interpolation-example/kush/01_preflight_check.pre.sh`**:
+```
+if [ $(echo $ADMIN_INIT_USERNAME | wc -c) -gt 14 ]; then
+  echo "${red}Error: \$ADMIN_INIT_USERNAME cannot be longer than 14 characters (got $ADMIN_ADMIT_USERNAME). ${white}" 1>&2
+  exit 1
+fi
 ```
 
 Since each deployment will produce different output, it may make sense to also add a line like 
@@ -257,6 +288,78 @@ for scripts and interpolations:
 * `$CHARTNAME` - the name of the chart
 
 Other environment variables are provided by the helm plugin architecture, see the list [here](https://helm.sh/docs/topics/plugins/#environment-variables). 
+
+### Custom --values
+
+All of the features thus far live in the chart's `kush` directory and are baked into the chart, mostly to provide flexibility when 
+relying on third-party dependency charts or complex pre- or post-processing with a familiar bash API. 
+
+It's also possible to do interpolation in values files included with `--values` (or the shorthand `-f`); for example
+we may want to set the number of replicas from a variable (defaulting to 1 if unset) with something like:
+
+**`custom-values.yaml`**:
+```
+replicaCount: ${REPLICAS:-1}   --kush-interpolate
+```
+
+It's not clear why we'd want this when we're writing deployment-specific yaml to begin with, unless we wanted to perform some logic to set
+the variable. Rather than handling this logic outside the deployment (with our own wrapper scripts), we can embed pre- and post-scripts
+into custom values files. Lines in these files beginning with `#$` will be extracted and treated as `.pre.sh` scripts (they can be whitespace-indented
+to fit neatly within the yaml).
+
+This example inspects the included `$RELEASE_NAME` variable to set replicates differently if the release name ends with `dev`. 
+
+**`custom-values.yaml`**:
+```
+#$ if echo $RELEASE_NAME | grep -Eqs 'dev$'; then
+#$   export REPLICAS=1
+#$ else
+#$   export REPLICAS=3
+#$ fi
+#$
+#$
+
+replicaCount: ${REPLICAS:-1}   --kush-interpolate
+```
+
+Values-embedded pre-scripts run *after* chart `.pre.sh` scripts, so if we like we can override those effects. For example, we may add
+the following to `custom-values.yaml` to set the admin username to `admin` (overriding the `$USER` determination) and password
+to a psuedo-random (but repeatable) value based on a hash of the release name. 
+
+**`custom-values.yaml`**:
+```
+#  make admin username static
+#$ ADMIN_INIT_USERNAME=admin
+#  make password deterministic (based on release name)
+#$ ADMIN_INIT_PASSWORD=$RELEASE_NAME-$(echo $RELEASE_NAME | md5sum | cut -c 1-8)
+```
+
+When multiple `--values` files are given, `#$` lines are extracted from each in the order given and 
+sourced before templating/kustomization/interpolation. 
+
+While `#$` lines are processed after `.pre.sh` files, similar `$%` lines are processed after `.post.sh` files, allowing for 
+custom post-processing. 
+
+**`custom-values.yaml`**:
+```
+#% echo Success!
+#% helm list --all-namespaces
+```
+
+### Summary
+
+In summary, the order of operations is:
+
+1. `.pre.sh` files in the chart `kush` directory are processed
+2. `#$` lines in `--values` files are processed
+3. The chart is rendered (including `--values` files) and processed with `kustomization.yam`
+4. Lines in the rendered chart annotated with `--kush-interpolate` are processed
+5. `.post.sh` files in the chart `kush` directory are processed
+6. `#%` lines in `--values` files are processed
+
+Steps 1, 2, 4, 5, and 6 are only applied with `--kush-interpolate` is given as a flag to helm. 
+
+
 
 
 
