@@ -19,38 +19,43 @@ Created by [gh-md-toc](https://github.com/ekalinin/github-markdown-toc)
 
 Helm plugin for in-chart kustomizations and optional bash interpolation. 
 
-Note: this is early-stage software with security and reproducibility considerations. 
+Note: this software bypasses many of the safety features in helm's design. Interpolation in particular
+allows--encourages even--helm charts to run *arbitrary code*. It's meant primarily for internally 
+developed charts. 
 
 ## Overview
 
 Kush (from kustomize-sh) is a simple `helm` plugin allowing [kustomize](https://kustomize.io/) directories to be 
 stored within Helm [charts](https://helm.sh/docs/chart_template_guide/getting_started/) and used for post-rendering. 
 
-Kustomize (or `kubectl kustomize`) when used for post-rendering of Helm charts solves a common problem: third-party 
+Kustomize (or `kubectl kustomize`) when used for [post-rendering](https://helm.sh/docs/topics/advanced/#post-rendering) of Helm charts solves a common problem: third-party 
 charts included as dependencies frequently don't expose as much [flexibility as we'd like](https://testingclouds.wordpress.com/2018/07/20/844/) 
-via `values.yaml`. Helm-3's `--post-renderer` isn't batteries-included though; the sub-chart user must write a (usually simple) 
+via `values.yaml`. Helm3's `--post-renderer` isn't batteries-included though; the user must write a (usually simple) 
 post-rending script and maintain kustomize resources independently. 
 
-At the same time, various yaml-based tools (including Helm and kustomize) [deliberately eschew](https://kubernetes-sigs.github.io/kustomize/faq/eschewedfeatures/#build-time-side-effects-from-cli-args-or-env-variables) all but basic templating functions,
-preferring to keep configuration 'simple' (*cough*) and deterministic. Tools like [ytt](https://get-ytt.io/)
+At the same time, various yaml-based tools (including Helm and kustomize) 
+[deliberately eschew](https://kubernetes-sigs.github.io/kustomize/faq/eschewedfeatures/#build-time-side-effects-from-cli-args-or-env-variables) 
+all but basic templating functions, preferring to keep configuration 'simple' (*cough*) and deterministic. Tools like [ytt](https://get-ytt.io/)
 and [dhall](https://github.com/dhall-lang) bring sophisticated scripting abilities to yaml, but are complex domain-specific
-languages. 
+languages with limited ability to leverage external tooling. 
 
 Kush includes an option to interpolate inline-bash from included kustomize resources and charts 
 and source included scripts during deployment. This is less secure than ytt and dhall (because it runs arbitrary code hosted
-in charts as part of the deployment process), but very flexible and accessible. Interpolation must be enabled with
-`--kush-interpolate`. 
+in charts as part of the deployment process), but very flexible and accessible. Interpolation is not enabled by default, it must be enabled with
+`--kush-interpolate`.
 
 ## Known Bugs / TODOs
 
 Helm post-rendering is known not to work with resources that utilize helm hooks, see [https://github.com/helm/helm/issues/7891](https://github.com/helm/helm/issues/7891) for details.
 
-Interpolation/scripting errors frequently result in silent output (gobbled up by helm I think). 
+Interpolation/scripting errors frequently result in silent output (gobbled up by helm?). 
 
 Errors don't stop further processing when they should.
 
 Using `--generate-name` is not supported, and parsing of release name and chart currently assumes these are
 the first options, as in `helm kush template my-release-name chart-repo/chart ...`. 
+
+Spaces in filenames aren't handled well.
 
 ## Prerequisites and Installation
 
