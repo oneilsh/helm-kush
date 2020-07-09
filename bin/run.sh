@@ -35,6 +35,7 @@ fi
 # if a release name isn't given, we can assume the third arg is a flag or just not given
 # (after the command, post-kush, e.g. in helm kush template repo/chart --dry-run)
 # save everything after the chart in FLAGS
+DRY_RUN="false"
 INTERPOLATE="false"
 CMD=$1
 CHART=""
@@ -48,6 +49,9 @@ else
    FLAGS="${@:4}"
 fi
 
+if [ "$CMD" == "template" ] || echo "$@" | grep -Esq '\--dry-run'; then
+  DRY_RUN="true"
+fi
 
 # see if the user passes a --kush-interpolate flag; if so, drop it from the flags
 if echo "$FLAGS" | grep -Eqs -- '--kush-interpolate'; then
@@ -93,6 +97,7 @@ if [ -d "$CHARTDIR/kush" ]; then
   export CHART
   export CHARTNAME
   export USER_VALUES_FILES
+  export DRY_RUN
 
   if [ "$INTERPOLATE" == "true" ]; then
     for VALUEFILE in $USER_VALUES_FILES; do
