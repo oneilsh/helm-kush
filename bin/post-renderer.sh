@@ -8,12 +8,12 @@ cat <&0 | sed "s/$RELEASE_NAME/RELEASE-NAME/" > $WORK_DIR/helm-template-output.y
 if [ "$INTERPOLATE" == "true" ]; then
   IFS=''
   kubectl kustomize $WORK_DIR | sed "s/RELEASE-NAME/$RELEASE_NAME/g" | \
-  while read line; do
+  while read -r line; do
     if echo "$line" | grep -Eqs '[[:blank:]]*--kush-interpolate[[:blank:]]*$'; then
       newline=$(echo "$line" | sed -r 's/[[:blank:]]*--kush-interpolate[[:blank:]]*$//')
-      eval echo \"$newline\"
+      eval echo -E \"$newline\"
     else
-      echo "$line"
+      echo -E $line
     fi
   done
 else
