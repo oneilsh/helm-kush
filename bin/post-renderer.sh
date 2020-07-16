@@ -9,9 +9,9 @@ if [ "$INTERPOLATE" == "true" ]; then
   IFS=''
   kubectl kustomize $WORK_DIR | sed "s/RELEASE-NAME/$RELEASE_NAME/g" | \
   while read -r line; do
-    if echo "$line" | grep -Eqs '[[:blank:]]*--kush-interpolate[[:blank:]]*$'; then
-      newline=$(echo "$line" | sed -r 's/[[:blank:]]*--kush-interpolate[[:blank:]]*$//')
-      eval echo -E \"$newline\"
+    # look for ...$(...)...
+    if echo "$line" | grep -Eqs '.*?\$\(.*?\).*'; then
+      eval echo -E \"$line\"
     else
       echo -E $line
     fi

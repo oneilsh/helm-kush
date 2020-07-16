@@ -11,4 +11,4 @@
 #$ 
 #$ 
 
-replicaCount: $REPLICAS  --kush-interpolate
+replicaCount: $(echo -n $REPLICAS)

@@ -3,9 +3,9 @@ entries:
   basic-example:
   - apiVersion: v2
     appVersion: 1.16.0
-    created: "2020-07-07T19:16:28.348337-07:00"
+    created: "2020-07-16T08:48:28.25381-07:00"
     description: An example kush-enabled helm chart.
-    digest: 599ba42e149958037d565463739b220db47bcef6c67fb4b51739f147df18efab
+    digest: 5090148036e57c521c704175b3b52ea9b18dc1720845c76ae7a2f6958df61f74
     name: basic-example
     type: application
     urls:
@@ -14,12 +14,12 @@ entries:
   interpolation-example:
   - apiVersion: v2
     appVersion: 1.16.0
-    created: "2020-07-07T19:16:28.349644-07:00"
+    created: "2020-07-16T08:48:28.254469-07:00"
     description: An example kush-enabled helm chart.
-    digest: b5286aeab1394dd5767c507d76dfa76a15fb7ebc7663087430de2379b81c7b30
+    digest: 679fee18d95e18bb7b7966ef5a66c8f5f34174f74a33f2cc7c63ac8629f9fe39
     name: interpolation-example
     type: application
     urls:
     - interpolation-example-0.1.0.tgz
     version: 0.1.0
-generated: "2020-07-07T19:16:28.344086-07:00"
+generated: "2020-07-16T08:48:28.253059-07:00"

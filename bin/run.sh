@@ -98,7 +98,6 @@ if [ -d "$CHARTDIR/kush" ]; then
   export CHARTNAME
   export USER_VALUES_FILES
   export DRY_RUN
-
   if [ "$INTERPOLATE" == "true" ]; then
     for VALUEFILE in $USER_VALUES_FILES; do
       source <(cat "$VALUEFILE" | grep -E '^[[:blank:]]*#\^\$' | sed 's/^[[:blank:]]*#\^\$//')
@@ -114,7 +113,7 @@ if [ -d "$CHARTDIR/kush" ]; then
       source <(cat "$VALUEFILE" | grep -E '^[[:blank:]]*#\$' | sed 's/^[[:blank:]]*#\$//')
     done
   fi
-
+  
   $HELM_BIN $CMD "$RELEASE_NAME" "$CHARTDIR" $FLAGS --post-renderer="$HELM_PLUGIN_DIR/bin/post-renderer.sh"
   
   if [ "$INTERPOLATE" == "true" ]; then

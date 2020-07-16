@@ -188,9 +188,7 @@ patchesStrategicMerge:
 
 The difference is in `patch-deployment.yaml`, where we fill the values from environment variables 
 (or any bash-evaluatable expression, e.g. `$(expr 8000 + $RANDOM % 1000)` for a random number between 8000 and 8999).
-To enable interpolation and protect other lines, we flag the line somewhere at the end 
-with `--kush-interpolate` (which will be stripped). We also have to add the `--kush-interpolate` flag to the helm command to enable
-any interpolation.
+To enable interpolation and protect other lines, only lines containing bash command-substitution with `$()` are interpolated.
 
 **`interpolation-example/kush/patch-deployment.yaml`**:
 ```
@@ -205,9 +203,9 @@ spec:
         - name: interpolation-example
           env:
             - name: ADMIN_PASSWORD
-              value: $ADMIN_INIT_PASSWORD        --kush-interpolate
+              value: $(echo $ADMIN_INIT_PASSWORD)
             - name: ADMIN_USERNAME
-              value: $ADMIN_INIT_USERNAME        --kush-interpolate
+              value: $(echo $ADMIN_INIT_USERNAME)
 ```
 
 Now we can run the chart with these variables set:
@@ -248,13 +246,14 @@ Inline interpolation is one thing, but we may want to run more complex scripts b
 interpolation. This is enabled by adding `.pre.sh` and/or `.post.sh` files to the `kush` directory; `.pre.sh` files are run 
 (sourced, actually, so they can setup variables etc.) prior to templating, kustomization, and interpolation, and `.pre.sh` files are run after.
 
-Let's use a `.pre.sh` file to default the username to the running user (`$USER`) and password to a randomly generated passphrase.
+Let's use a `.pre.sh` file to default the username to the running user (`$USER`) and password to a randomly generated passphrase. We export the
+variables to make the available to the post-renderer (which is executed by helm). 
 
 **`interpolation-example/kush/00_admin_pw.pre.sh`**:
 ```
 # the sed is to remove trailing windows-newline returned by server
-ADMIN_INIT_USERNAME=$USER
-ADMIN_INIT_PASSWORD=$(wget "https://makemeapassword.ligos.net/api/v1/passphrase/plain?whenUp=StartOfWord&sp=F&pc=1&wc=2&sp=y&maxCh=20" -qO- | sed -e 's/\r//g')
+export ADMIN_INIT_USERNAME=$USER
+export ADMIN_INIT_PASSWORD=$(wget "https://makemeapassword.ligos.net/api/v1/passphrase/plain?whenUp=StartOfWord&sp=F&pc=1&wc=2&sp=y&maxCh=20" -qO- | sed -e 's/\r//g')
 ```
 
 As mentioned above, if requirements must be in place for proper interpolation a `.pre.sh` file can be used to check. (But as these are run
@@ -304,7 +303,7 @@ we may want to set the number of replicas from a variable (defaulting to 1 if un
 
 **`custom-values.yaml`**:
 ```
-replicaCount: ${REPLICAS:-1}   --kush-interpolate
+replicaCount: $(echo ${REPLICAS:-1})
 ```
 
 It's not clear why we'd want this when we're writing deployment-specific yaml to begin with, unless we wanted to perform some logic to set
@@ -324,7 +323,7 @@ This example inspects the included `$RELEASE_NAME` variable to set replicates di
 #$
 #$
 
-replicaCount: ${REPLICAS:-1}   --kush-interpolate
+replicaCount: $(echo ${REPLICAS:-1})
 ```
 
 Values-embedded pre-scripts run *after* chart `.pre.sh` scripts, so if we like we can override those effects. For example, we may add
@@ -372,7 +371,7 @@ In summary, the order of operations is:
 1. `.pre.sh` files in the chart `kush` directory are processed
 2. `#$` lines in `--values` files are processed
 3. The chart is rendered (including `--values` files) and processed with `kustomization.yam`
-4. Lines in the rendered chart annotated with `--kush-interpolate` are processed
+4. Lines in the rendered chart with `$()` substitution are interpolated
 5. `.post.sh` files in the chart `kush` directory are processed
 6. `#%` lines in `--values` files are processed
 
