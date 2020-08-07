@@ -106,8 +106,8 @@ helm kush template myrelease kush-examples/interpolation-example --kush-interpol
 This also works with `--values` (only via local file, not URL like standard helm) and provides opportunities for scripting and interpolation there as well (more below).
 
 ```
-helm kush template myrelease kush-examples/interpolation-example --kush-interpolate \
-  --values <(wget https://raw.githubusercontent.com/oneilsh/helm-kush/master/kush-examples/interpolation-example/custom-values.yaml -qO -)
+wget https://raw.githubusercontent.com/oneilsh/helm-kush/master/kush-examples/interpolation-example/custom-values.yaml
+helm kush template myrelease kush-examples/interpolation-example --kush-interpolate --values custom-values.yaml
 ```
 
 
@@ -164,9 +164,9 @@ spec:
               value: admin
 ```
 
-And that's it; `basic-example` can now be deployed with `helm kush` without the need for forking the upstream chart, and we get kustomize 
-resources 'bundled' with the chart. This can be handy in cases where kustomize is used with a custom chart but the files need to match
-the chart version. 
+And that's it; `basic-example` can now be deployed with `helm kush` without the need for forking the upstream chart (though we didn't include
+it as a dependency, we might have), and we get kustomize resources 'bundled' with the chart. This can be handy in cases where kustomize 
+is used with a custom chart but the files need to match the chart version. 
 
 ## Chart Authoring w/ Interpolation
 
@@ -190,7 +190,7 @@ patchesStrategicMerge:
 
 The difference is in `patch-deployment.yaml`, where we fill the values from environment variables 
 (or any bash-evaluatable expression, e.g. `$(expr 8000 + $RANDOM % 1000)` for a random number between 8000 and 8999).
-To enable interpolation and protect other lines, only lines containing bash command-substitution with `$()` are interpolated.
+Interpolation is handled by [esh](https://github.com/jirutka/esh/blob/master/esh), see the documentation there for details.
 
 **`interpolation-example/kush/patch-deployment.yaml`**:
 ```
@@ -205,9 +205,9 @@ spec:
         - name: interpolation-example
           env:
             - name: ADMIN_PASSWORD
-              value: $(echo $ADMIN_INIT_PASSWORD)
+              value: <%= $ADMIN_INIT_PASSWORD %>
             - name: ADMIN_USERNAME
-              value: $(echo $ADMIN_INIT_USERNAME)
+              value: <%= $ADMIN_INIT_USERNAME %>
 ```
 
 Now we can run the chart with these variables set:
@@ -248,26 +248,33 @@ Inline interpolation is one thing, but we may want to run more complex scripts b
 interpolation. This is enabled by adding `.pre.sh` and/or `.post.sh` files to the `kush` directory; `.pre.sh` files are run 
 (sourced, actually, so they can setup variables etc.) prior to templating, kustomization, and interpolation, and `.pre.sh` files are run after.
 
-Let's use a `.pre.sh` file to default the username to the running user (`$USER`) and password to a randomly generated passphrase. We export the
-variables to make the available to the post-renderer (which is executed by helm). 
+Let's use a `.pre.sh` file to default the username to the running user (`$USER`) and password to a randomly generated passphrase, if those
+variables are not already set. (Note that both exported and un-exported variables are available to later scripts and interpolation.) 
 
 **`interpolation-example/kush/00_admin_pw.pre.sh`**:
 ```
-# the sed is to remove trailing windows-newline returned by server
-export ADMIN_INIT_USERNAME=$USER
-export ADMIN_INIT_PASSWORD=$(wget "https://makemeapassword.ligos.net/api/v1/passphrase/plain?whenUp=StartOfWord&sp=F&pc=1&wc=2&sp=y&maxCh=20" -qO- | sed -e 's/\r//g')
+if [ "$ADMIN_INIT_USERNAME" == "" ]; then
+  ADMIN_INIT_USERNAME=$USER
+fi
+
+if [ "$ADMIN_INIT_PASSWORD" == "" ]; then
+  # sed here fixes windows-style newline
+  ADMIN_INIT_PASSWORD=$(curl --silent "https://makemeapassword.ligos.net/api/v1/passphrase/plain?whenUp=StartOfWord&sp=F&pc=1&wc=2&sp=y&maxCh=20" | sed -r 's/\r//g')
+fi
 ```
 
 As mentioned above, if requirements must be in place for proper interpolation a `.pre.sh` file can be used to check. (But as these are run
-as the first step, it's difficult to determine if they will be set in later steps.)
+as the first step, it's difficult to determine if requirements may be satisfied in later steps.)
 
 **`interpolation-example/kush/01_preflight_check.pre.sh`**:
 ```
 if [ $(echo $ADMIN_INIT_USERNAME | wc -c) -gt 14 ]; then
-  echo "${red}Error: \$ADMIN_INIT_USERNAME cannot be longer than 14 characters (got $ADMIN_ADMIT_USERNAME). ${white}" 1>&2
+  echo "${red}Error: \$ADMIN_INIT_USERNAME cannot be longer than 14 characters (got $ADMIN_INIT_USERNAME). ${white}" 1>&2
   exit 1
 fi
 ```
+
+Color variables (black, red, green, yellow, blue, magenta, cyan, white (default)) are available for basic output styling.
 
 Since each deployment will produce different output, it may make sense to also add a line like 
 

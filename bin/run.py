@@ -22,6 +22,10 @@ def source(file_to_source_path, include_unexported_variables=True):
     dump = '/usr/bin/env python3 -c "import os, pickle; pickle.dump(dict(os.environ), open(\'%s\', \'wb\'))"' % (temp_filename)
     process = subprocess.Popen(['/bin/bash', '-c', '%s && %s' % (source, dump)])
     process.wait()
+    if process.returncode != 0:
+        sys.stderr.write("Source failed. Script: " + os.path.basename(file_to_source_path) + ", return code: " + str(process.returncode) + "\n")
+        exit(1)
+            
  
     set_environ = pickle.load(open(temp_filename, "rb"))
     for key in set_environ:
@@ -156,7 +160,7 @@ with tempfile.TemporaryDirectory() as tempdir:
         try:
             shutil.copy(filename, user_values_dir)
         except OSError as error:
-            sys.stderr.write("Unable to find " + filename + ", does it exist? Error:\n")
+            sys.stderr.write("Kush unable to find values file " + filename + ", does it exist? Error:\n")
             sys.stderr.write(str(error))
             sys.stderr.write("\n")
             exit(1)
