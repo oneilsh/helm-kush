@@ -295,7 +295,7 @@ echo "${yellow}Your username/password are $ADMIN_INIT_USERNAME/$ADMIN_INIT_PASSW
 In the above we've used `$CHARTDIR` (which is a temporary working copy of the chart) and some color variables; here are the ones available
 for scripts and interpolations:
 
-* `$CHARTDIR` - location of working chart copy
+* `$CHARTDIR` - location of working chart copy (`$CHARTDIR/user_values_files` will contain copies of files specified by `--values`; they are interpolated at the interpolation step, see summary below)
 * `$RELEASE_NAME` - the given release name (holds `RELEASE-NAME` if not given, using `--generate-name` is not supported)
 * `$CHART` - the chart as given, e.g. `kush-examples/interpolation-example` (from repo) or `https://oneilsh.github.io/helm-kush/interpolation-example-0.1.0.tgz` (direct URL) or just `interpolation-example` (local path)
 * `$CHARTNAME` - the name of the chart
@@ -308,68 +308,15 @@ All of the features thus far live in the chart's `kush` directory and are baked 
 relying on third-party dependency charts or complex pre- or post-processing with a familiar bash API. 
 
 It's also possible to do interpolation in values files included with `--values` (or the shorthand `-f`); for example
-we may want to set the number of replicas from a variable (defaulting to 1 if unset) with something like:
+we may want to set the number of replicas from a variable (defaulting to 3 if unset, or 1 in the release name ends with `dev`):
 
 **`custom-values.yaml`**:
 ```
-replicaCount: $(echo ${REPLICAS:-1})
-```
-
-It's not clear why we'd want this when we're writing deployment-specific yaml to begin with, unless we wanted to perform some logic to set
-the variable. Rather than handling this logic outside the deployment (with our own wrapper scripts), we can embed pre- and post-scripts
-into custom values files. Lines in these files beginning with `#$` will be extracted and treated as `.pre.sh` scripts (they can be whitespace-indented
-to fit neatly within the yaml).
-
-This example inspects the included `$RELEASE_NAME` variable to set replicates differently if the release name ends with `dev`. 
-
-**`custom-values.yaml`**:
-```
-#$ if echo $RELEASE_NAME | grep -Eqs 'dev$'; then
-#$   export REPLICAS=1
-#$ else
-#$   export REPLICAS=3
-#$ fi
-#$
-#$
-
-replicaCount: $(echo ${REPLICAS:-1})
-```
-
-Values-embedded pre-scripts run *after* chart `.pre.sh` scripts, so if we like we can override those effects. For example, we may add
-the following to `custom-values.yaml` to set the admin username to `admin` (overriding the `$USER` determination) and password
-to a psuedo-random (but repeatable) value based on a hash of the release name. 
-
-**`custom-values.yaml`**:
-```
-#  make admin username static
-#$ ADMIN_INIT_USERNAME=admin
-#  make password deterministic (based on release name)
-#$ ADMIN_INIT_PASSWORD=$RELEASE_NAME-$(echo $RELEASE_NAME | md5sum | cut -c 1-8)
-```
-
-When multiple `--values` files are given, `#$` lines are extracted from each in the order given and 
-sourced before templating/kustomization/interpolation. 
-
-While `#$` lines are processed after `.pre.sh` files, similar `$%` lines are processed after `.post.sh` files, allowing for 
-custom post-processing. 
-
-**`custom-values.yaml`**:
-```
-#% echo Success!
-#% helm list --all-namespaces
-```
-
-In some cases it may be necessary to run commands *before* `.pre.sh` and `.post.sh`; lines prefixed with `#^$` and `#^%` 
-are for these situations. For example, if you require some configuration set via `--values` and want to check it in a `.pre.sh`
-script, these would be the place to do so. 
-
-**`interpolation-example/kush/02_values_check.pre.sh`**:
-```
-if [ -z "$PATH" ]; then
-  echo "${red}Error: you must set \$PATH in a supplied --values file. Example: ${white}" 1>&2
-  echo "${red}#^$ PATH=/api${white}"
-  exit 1
-fi
+<% if echo $RELEASE_NAME | grep -Eqs 'dev$'; then %>
+replicaCount: 1
+<% else %>
+replicaCount: <%= ${REPLICAS:-3} %>
+<% fi %>
 ```
 
 
@@ -378,15 +325,9 @@ fi
 In summary, the order of operations is:
 
 1. `.pre.sh` files in the chart `kush` directory are processed
-2. `#$` lines in `--values` files are processed
-3. The chart is rendered (including `--values` files) and processed with `kustomization.yam`
-4. Lines in the rendered chart with `$()` substitution are interpolated
-5. `.post.sh` files in the chart `kush` directory are processed
-6. `#%` lines in `--values` files are processed
+2. Chart files and files specified by `--values` are templated with `esh` (in a temporary copy of the chart). This includes all `.yaml` files (including those in `templates` and other directories) and all files in the `kush` directory.
+3. The chart is rendered and processed with `kustomization.yaml`
+4. `.post.sh` files in the chart `kush` directory are processed
 
-Steps 1, 2, 4, 5, and 6 are only applied with `--kush-interpolate` is given as a flag to helm. 
-
-
-
-
+Steps 1, 2, and 4 are only applied with `--kush-interpolate` is given as a flag to helm. 
 
