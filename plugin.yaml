@@ -1,7 +1,7 @@
 name: "kush"
-version: "0.3.0"
-usage: "run kustomize post-renderer on embedded kustomizations/ dir"
-description: "A helm plugin that runs kustomize on scripts in the chart kustomizations/ directory"
+version: "0.4.0"
+usage: "helm kush <install|upgrade|template> [NAME] [CHART] [flags] [--kush-interpolate] "
+description: "A helm plugin that runs kustomize on scripts in the chart kush/ directory. Optionally supports bash-based templating and embedding scripts in charts."
 ignoreFlags: false
 #command: "$HELM_BIN --host $TILLER_HOST list --short --max 1 --date -r"
-command: "$HELM_PLUGIN_DIR/bin/run.sh"
+command: "$HELM_PLUGIN_DIR/bin/run.py"

@@ -9,6 +9,6 @@ spec:
         - name: interpolation-example
           env:
             - name: ADMIN_PASSWORD
-              value: $(echo $ADMIN_INIT_PASSWORD)
+              value: <%= $ADMIN_INIT_PASSWORD %>
             - name: ADMIN_USERNAME
-              value: $(echo $ADMIN_INIT_USERNAME)
+              value: <%= $ADMIN_INIT_USERNAME %>

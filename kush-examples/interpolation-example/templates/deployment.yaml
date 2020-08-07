@@ -4,6 +4,7 @@ metadata:
   name: {{ include "example-kush-chart.fullname" . }}
   labels:
     {{- include "example-kush-chart.labels" . | nindent 4 }}
+    hi: <%= $(echo $USER) %>
 spec:
 {{- if not .Values.autoscaling.enabled }}
   replicas: {{ .Values.replicaCount }}
@@ -18,7 +19,7 @@ spec:
         {{- toYaml . | nindent 8 }}
     {{- end }}
       labels:
-        {{- include "example-kush-chart.selectorLabels" . | nindent 8 }}
+        {{- include "example-kush-chart.selectorLabels" . | nindent 8 }}i
     spec:
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:

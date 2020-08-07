@@ -1,0 +1,5 @@
+<% if echo $RELEASE_NAME | grep -Eqs 'dev$'; then %>
+replicaCount: 1
+<% else %>
+replicaCount: <%= ${REPLICAS:-3} %>
+<% fi %>

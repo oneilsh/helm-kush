@@ -4,6 +4,7 @@ Table of Contents
    * [helm-kush (kustomize-sh)](#helm-kush-kustomize-sh)
       * [Overview](#overview)
       * [Known Bugs / TODOs](#known-bugs--todos)
+      * [Changelog](#changelog)
       * [Prerequisites and Installation](#prerequisites-and-installation)
       * [Basic Usage: Chart Install](#basic-usage-chart-install)
       * [Chart Authoring w/ Kustomization](#chart-authoring-w-kustomization)
@@ -17,7 +18,7 @@ Created by [gh-md-toc](https://github.com/ekalinin/github-markdown-toc)
 
 # helm-kush (kustomize-sh)
 
-Helm plugin for in-chart kustomizations and optional bash interpolation. 
+Helm plugin for in-chart kustomizations and optional bash interpolation the embedded [esh](https://github.com/jirutka/esh) template engine. 
 
 Note: this software bypasses many of the safety features in helm's design. Interpolation in particular
 allows--encourages even--helm charts to run *arbitrary code*. It's meant primarily for internally 
@@ -39,27 +40,28 @@ all but basic templating functions, preferring to keep configuration 'simple' (*
 and [dhall](https://github.com/dhall-lang) bring sophisticated scripting abilities to yaml, but are complex domain-specific
 languages with limited ability to leverage external tooling. 
 
-Kush includes an option to interpolate inline-bash from included kustomize resources and charts 
-and source included scripts during deployment. This is less secure than ytt and dhall (because it runs arbitrary code hosted
-in charts as part of the deployment process), but very flexible and accessible. Interpolation is not enabled by default, it must be enabled with
+Kush includes an option to interpolate inline-bash from included kustomize resources, chart yaml files, and user-supplied yaml files with an embedded
+[esh](https://github.com/jirutka/esh) template engine, and it supports sourcing chart-embedded scripts during deployment. 
+This is less secure than ytt and dhall (because it runs arbitrary code hosted
+in charts as part of the deployment process), but very flexible and accessible. Interpolation is not enabled by default, and must be enabled with
 `--kush-interpolate`.
 
 ## Known Bugs / TODOs
 
 Helm post-rendering is known not to work with resources that utilize helm hooks, see [https://github.com/helm/helm/issues/7891](https://github.com/helm/helm/issues/7891) for details.
 
-Interpolation/scripting errors frequently result in silent output (gobbled up by helm?). 
-
-Errors don't stop further processing when they should.
-
 Using `--generate-name` is not supported, and parsing of release name and chart currently assumes these are
 the first options, as in `helm kush template my-release-name chart-repo/chart ...`. 
 
-Spaces in filenames aren't handled well.
+## Changelog
+
+v0.4.0 - Switched to python for main plugin script for robustness. Removed custom values.yaml embedded scripting, but added support for esh templating in custom values.yaml.
+
+v0.3.0 - Initial version.
 
 ## Prerequisites and Installation
 
-Helm 3.X and kubectl version 1.14 or above. 
+Helm 3.X and kubectl version 1.14 or above, python3.X in path.  
 
 Install with: 
 
@@ -105,7 +107,7 @@ This also works with `--values` (only via local file, not URL like standard helm
 
 ```
 helm kush template myrelease kush-examples/interpolation-example --kush-interpolate \
-  --values <(wget https://raw.githubusercontent.com/oneilsh/helm-kush/master/example-charts/interpolation-example/custom-values.yaml -qO -)
+  --values <(wget https://raw.githubusercontent.com/oneilsh/helm-kush/master/kush-examples/interpolation-example/custom-values.yaml -qO -)
 ```
 
 
