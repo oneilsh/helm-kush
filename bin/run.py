@@ -178,10 +178,10 @@ with tempfile.TemporaryDirectory() as tempdir:
 
     # extra vars that might come in handy in sourced scripts
     os.environ["CHART"] = chart
-    os.environ["CHARTNAME"] = chart_name
+    os.environ["CHART_NAME"] = chart_name
     os.environ["CHART_DIR"] = chart_dir
-    os.environ["CHARTDIR"] = chart_dir
-  
+    os.environ["DRY_RUN"] = str(dry_run)
+
     # extra tools that might come in handy in sourced scripts...
     os.environ["PATH"] = os.environ["PATH"] + ":" + os.path.join(os.environ["HELM_PLUGIN_DIR"], "bin")
 

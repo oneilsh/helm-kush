@@ -279,7 +279,7 @@ Color variables (black, red, green, yellow, blue, magenta, cyan, white (default)
 Since each deployment will produce different output, it may make sense to also add a line like 
 
 ```
-echo "Your username/password are $ADMIN_INIT_USERNAME/$ADMIN_INIT_PASSWORD, write them down!" >> $CHARTDIR/templates/NOTES.txt
+echo "Your username/password are $ADMIN_INIT_USERNAME/$ADMIN_INIT_PASSWORD, write them down!" >> $CHART_DIR/templates/NOTES.txt
 ```
 
 which will modify the (temporary) to-be-deployed copy of the chart's `NOTES.txt` to print additional usage information. However, if these values
@@ -292,13 +292,14 @@ So, we'll just print the information directly in a `.post.sh` script:
 echo "${yellow}Your username/password are $ADMIN_INIT_USERNAME/$ADMIN_INIT_PASSWORD, write them down!${white}"
 ```
 
-In the above we've used `$CHARTDIR` (which is a temporary working copy of the chart) and some color variables; here are the ones available
+In the above we've used `$CHART_DIR` (which is a temporary working copy of the chart) and some color variables; here are the ones available
 for scripts and interpolations:
 
-* `$CHARTDIR` - location of working chart copy (`$CHARTDIR/user_values_files` will contain copies of files specified by `--values`; they are interpolated at the interpolation step, see summary below)
+* `$CHART_DIR` - location of working chart copy (`$CHART_DIR/user_values_files` will contain copies of files specified by `--values`; they are interpolated at the interpolation step, see summary below)
 * `$RELEASE_NAME` - the given release name (holds `RELEASE-NAME` if not given, using `--generate-name` is not supported)
 * `$CHART` - the chart as given, e.g. `kush-examples/interpolation-example` (from repo) or `https://oneilsh.github.io/helm-kush/interpolation-example-0.1.0.tgz` (direct URL) or just `interpolation-example` (local path)
-* `$CHARTNAME` - the name of the chart
+* `$CHART_NAME` - the name of the chart
+* `$DRY_RUN` - set to `"True"` if running `helm kush template` or anything with `--dry-run`.
 
 Other environment variables are provided by the helm plugin architecture, see the list [here](https://helm.sh/docs/topics/plugins/#environment-variables). 
 

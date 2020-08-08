@@ -3,3 +3,6 @@ replicaCount: 1
 <% else %>
 replicaCount: <%= ${REPLICAS:-3} %>
 <% fi %>
+
+kubeContext: dev-cluster
+createNamespace: myNamespace

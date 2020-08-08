@@ -5,4 +5,12 @@ if ! command -v yq &> /dev/null; then
   exit 1
 fi
 
-cat $CHARTDIR/user_values_files/*.yaml | yq -e $1 | tr -d '"'
+# yq prints quotes around string output, so if we get those drop em (but only at the start and end, internal quotes we prolly want to keep)
+res=$(cat $CHART_DIR/user_values_files/*.yaml | esh - | yq -e $1 |  sed -r 's/(^")|("$)//g')
+
+# yq returns null if no match
+if [ "$res" == "null" ]; then
+  echo "$2"
+else
+  echo "$res"
+fi
