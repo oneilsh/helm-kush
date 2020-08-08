@@ -1,0 +1,3 @@
+
+echo "${green}Hey that tickles!${white}"
+echo "${green}Got args: ${yellow}${@}${white}"

@@ -62,14 +62,15 @@ def source_files_glob(pathpattern):
 
 
 
-
-
-
 def usage():
   sys.stderr.write("Helm kush allows embedding of kustomizations and bash-based templating within charts.\n")
   sys.stderr.write("See https://github.com/oneilsh/helm-kush for details.\n\n")
-  sys.stderr.write("Usage: helm kush <install|upgrade|template|<script_name>> [NAME] [CHART] [FLAGS] [--kush-interpolate] ...\n")
+  sys.stderr.write("Usage: helm kush <install|upgrade|template|run <script>> [release-name] <chart> [helm-flags] [--kush-interpolate] ...\n")
 
+if len(sys.argv) < 3:
+    sys.stderr.write("Not enough arguments. \n\n")
+    usage()
+    exit(1)
 
 #########################
 ## Arg parsing - mostly we'll be passing along to helm pulling out a few items
@@ -178,7 +179,11 @@ with tempfile.TemporaryDirectory() as tempdir:
     # extra vars that might come in handy in sourced scripts
     os.environ["CHART"] = chart
     os.environ["CHARTNAME"] = chart_name
-
+    os.environ["CHART_DIR"] = chart_dir
+    os.environ["CHARTDIR"] = chart_dir
+  
+    # extra tools that might come in handy in sourced scripts...
+    os.environ["PATH"] = os.environ["PATH"] + ":" + os.path.join(os.environ["HELM_PLUGIN_DIR"], "bin")
 
     # if we're interpolating, run esh interpolation on all .yaml files and all files in the kush directory
     os.environ["LC_ALL"] = "C"  # hush up an awk warning thrown by esh
@@ -213,14 +218,28 @@ with tempfile.TemporaryDirectory() as tempdir:
             # execute .post.sh files in the kush dir
             source_files_glob(os.path.join(chart_dir, "kush", "*.post.sh"))
 
-    # they want to run a kush/somescript
-    elif os.path.isfile(os.path.join(chart_dir, "kush", helm_command)):
-        source_args = " ".join(["'" + arg + "'" for arg in args[1:]])     # the first element will be the script name itself
-        source(os.path.join(chart_dir, "kush", helm_command) + " " + source_args) 
-
+    # they want to run a kush/somescript - in this case
+    # we wanto to go back to the original args: helm kush run somescript somereleasename somechart --some parameters
+    # args is ["run", "somescript", "somechart", "--some", "parameters"]
+    # so we'll pass args[1:] as params to the requested script
+    # note that we still have all the variables that .pre.sh scripts would have; $CHART_DIR, $CHART_NAME, etc.
+    elif helm_command == "run":
+        if len(args) == 1: # they're lookin for help (helm kush run)
+            usage()
+            exit(1)
+        kush_script = args[1]
+        if os.path.isfile(os.path.join(chart_dir, "kush", kush_script)):
+            source_args = " ".join(["'" + arg + "'" for arg in args[2:]])     # the first element will be the script name itself
+            source(os.path.join(chart_dir, "kush", kush_script) + " " + source_args) 
+        else: # no matching script found, so let's list the possibilities (all files not matching .yaml, .pre.sh, .post.sh)
+            sys.stderr.write("Options for run:\n")
+            for filename in glob.glob(os.path.join(chart_dir, "kush", "*")):
+                if not re.search(r"(\.yaml$)|(\.pre\.sh$)|(\.post\.sh$)", filename):
+                    sys.stderr.write("  helm kush run " + os.path.basename(filename) + " " + chart + " ...\n")
+            exit(1)
+        
     else:
-        sys.stderr.write("Error: " + os.path.join(chart_name, "kush", helm_command) + " not found.\n")
-        exit(1)
+        sys.stderr.write("Error: command " + helm_command + " not recognized (must be one of install, upgrade, template, run). \n")
 
 
 

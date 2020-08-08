@@ -1,0 +1,8 @@
+#!/bin/bash
+
+if ! command -v yq &> /dev/null; then
+  echo "${red}Sorry, this chart requires the yq utility: https://github.com/mikefarah/yq ${white}" 2>&1
+  exit 1
+fi
+
+cat $CHARTDIR/user_values_files/*.yaml | yq -e $1 | tr -d '"'
