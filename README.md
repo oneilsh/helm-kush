@@ -332,3 +332,43 @@ In summary, the order of operations is:
 
 Steps 1, 2, and 4 are only applied with `--kush-interpolate` is given as a flag to helm. 
 
+
+## Bonus: did you know --values files can be made executable? 
+
+The trick is to use `#!/usr/bin/env -S` option (which requires a recent version of `env`) 
+to use multi-parameter options for the interpreter.
+
+When using `env`, the `#!` will always have the name of the containing file appended sent to the
+interpreter (which will be treated as the last argument by `env -S`), so just make
+sure to leave the last specified parameter as `--values` when templating, installing, or upgrading.
+For delete there's no real use for the final parameter (the containing file), but the string 
+containing the filename can be used for the delete description.
+
+```
+#!/usr/bin/env -S helm template dev-registry stable/docker-registry --values 
+# execute this yaml file to template it!
+
+# install: 
+#!/usr/bin/env -S helm install dev-registry stable/docker-registry --namespace dev-projects --values 
+
+# upgrade: 
+#!/usr/bin/env -S helm upgrade dev-registry --install stable/docker registry --namespace dev-projects --values
+
+# delete:
+#!/usr/bin/env -S helm delete dev-registry --namespace dev-projects --description 
+
+resources:
+  limits:
+    cpu: 100m
+    memory: 256Mi
+  requests:
+    cpu: 100m
+    memory: 256Mi
+persistence:
+  accessMode: 'ReadWriteOnce'
+  enabled: true
+  size: 60Gi
+
+```
+
+This works fine with `helm kush` as well, of course :)
