@@ -200,7 +200,7 @@ with tempfile.TemporaryDirectory() as tempdir:
             
             
             files = exec("find " + chart_dir + " -type f -name '*.yaml'").strip().split("\n") # -exec sh -c '" + esh_bin + " {} > {}.esh_temp && mv {}.esh_temp {}' \;")
-            files.extend(exec("find " + os.path.join(chart_dir, "kush") + " -type f").strip().split("\n")) # -exec sh -c '" + esh_bin + " {} > {}.esh_temp && mv {}.esh_temp {}' \;")
+            #files.extend(exec("find " + os.path.join(chart_dir, "kush") + " -type f").strip().split("\n")) # -exec sh -c '" + esh_bin + " {} > {}.esh_temp && mv {}.esh_temp {}' \;")
             for filename in files:
                 if filename != "":
                     exec(esh_bin + " " + filename + " > " + filename + ".esh_temp && mv " + filename + ".esh_temp " + filename)

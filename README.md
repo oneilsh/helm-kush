@@ -326,7 +326,7 @@ replicaCount: <%= ${REPLICAS:-3} %>
 In summary, the order of operations is:
 
 1. `.pre.sh` files in the chart `kush` directory are processed
-2. Chart files and files specified by `--values` are templated with `esh` (in a temporary copy of the chart). This includes all `.yaml` files (including those in `templates` and other directories) and all files in the `kush` directory.
+2. Chart `.yaml` files and files specified by `--values` are templated with `esh` (in a temporary copy of the chart). This includes all `.yaml` files (including those in `templates` and other directories).
 3. The chart is rendered and processed with `kustomization.yaml`
 4. `.post.sh` files in the chart `kush` directory are processed
 
