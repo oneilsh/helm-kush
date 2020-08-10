@@ -1,12 +1,12 @@
 #!/bin/bash
 
 if ! command -v yq &> /dev/null; then
-  echo "${red}Sorry, this chart requires the yq utility: https://github.com/mikefarah/yq ${white}" 2>&1
+  echo "${red}Sorry, this chart requires the yq utility (v3): https://github.com/mikefarah/yq ${white}" 2>&1
   exit 1
 fi
 
 # yq prints quotes around string output, so if we get those drop em (but only at the start and end, internal quotes we prolly want to keep)
-res=$(cat $CHART_DIR/user_values_files/*.yaml | esh - | yq -e $1 |  sed -r 's/(^")|("$)//g')
+res=$(cat $CHART_DIR/user_values_files/*.yaml | esh - | yq r -D null -e - "$1" |  sed -r 's/(^")|("$)//g')
 
 # yq returns null if no match
 if [ "$res" == "null" ]; then
