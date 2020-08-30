@@ -57,6 +57,7 @@ os.environ["white"] = exec("tput setaf 7")
 def source_files_glob(pathpattern):
     """Source files matching file glob, e.g. /some/path/*.sh"""
     files = glob.glob(pathpattern)
+    files.sort()
     for filename in files:
         source(filename)
 
@@ -188,7 +189,7 @@ with tempfile.TemporaryDirectory() as tempdir:
     # if we're interpolating, run esh interpolation on all .yaml files and all files in the kush directory
     os.environ["LC_ALL"] = "C"  # hush up an awk warning thrown by esh
     esh_bin = os.path.join(os.environ["HELM_PLUGIN_DIR"], "bin", "esh")
-   
+  
     # they want to run a supported helm command
     if re.search("(install)|(upgrade)|(template)", helm_command):
 
