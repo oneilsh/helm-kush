@@ -5,10 +5,10 @@ if ! command -v yq &> /dev/null; then
   exit 1
 fi
 
-# yq prints quotes around string output, so if we get those drop em (but only at the start and end, internal quotes we prolly want to keep)
-res=$(cat $CHART_DIR/user_values_files/*.yaml | esh - | yq r -D null -e - "$1" |  sed -r 's/(^")|("$)//g')
+# TODO: should try and index from the templated chart maybe, this will only grab the users' custom values files
+res=$(cat $CHART_DIR/user_values_files/*.yaml | esh - | yq r -D null - "$1" |  sed -r 's/(^")|("$)//g')
 
-# yq returns null if no match
+# above returns null if no match
 if [ "$res" == "null" ]; then
   echo "$2"
 else
