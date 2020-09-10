@@ -141,18 +141,19 @@ while i < len(params):
 
 helm_bin = os.environ["HELM_BIN"]
 
-chart_name = exec(helm_bin + " show chart " + chart + " | grep '^name: ' | sed -r 's/^name: //' ")
-
 with tempfile.TemporaryDirectory() as tempdir:
-    chart_dir = os.path.join(tempdir, chart_name)
  
     # if they're working with a directory chart, we want a copy, otherwise we want to pull and untar
     if os.path.isdir(chart):
-        shutil.copytree(chart, chart_dir)
+        # wow, shutil.copytree is dumb
+        basename = os.path.basename(chart)
+        shutil.copytree(chart, os.path.join(tempdir, basename))
     else:
         exec(helm_bin + " pull --untar --untardir=" + tempdir + " " + chart) 
- 
- 
+
+    chart_name = exec("cat " + tempdir + "/*/Chart.yaml | grep '^name:' | awk '{print $2}'")
+    chart_dir = os.path.join(tempdir, chart_name)
+
     # create a folder for their --values files
     user_values_dir = os.path.join(chart_dir, "user_values_files")
     os.mkdir(user_values_dir)
