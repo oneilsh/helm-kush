@@ -146,7 +146,7 @@ with tempfile.TemporaryDirectory() as tempdir:
     # if they're working with a directory chart, we want a copy, otherwise we want to pull and untar
     if os.path.isdir(chart):
         # wow, shutil.copytree is dumb
-        basename = os.path.basename(chart)
+        basename = os.path.basename(os.path.realpath(chart))
         shutil.copytree(chart, os.path.join(tempdir, basename))
     else:
         exec(helm_bin + " pull --untar --untardir=" + tempdir + " " + chart) 
