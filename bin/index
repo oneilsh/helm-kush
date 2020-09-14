@@ -6,7 +6,7 @@ if ! command -v yq &> /dev/null; then
 fi
 
 # TODO: should try and index from the templated chart maybe, this will only grab the users' custom values files
-res=$(cat $CHART_DIR/user_values_files/*.yaml | esh - | yq r -D null - "$1" |  sed -r 's/(^")|("$)//g')
+res=$(cat $CHART_DIR/user_values_files/*.yaml 2> /dev/null | esh - | yq r -D null - "$1" |  sed -r 's/(^")|("$)//g')
 
 # above returns null if no match
 if [ "$res" == "null" ]; then
