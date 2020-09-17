@@ -196,10 +196,6 @@ with tempfile.TemporaryDirectory() as tempdir:
 
         # we only want to run .pre.sh scripts if they are running a 
         if interpolate: 
-            # execute .pre.sh files in the kush dir (prior to interpolation),
-            # updating the environment if they export anything
-            source_files_glob(os.path.join(chart_dir, "kush", "*.pre.sh"))
-            
             
             files = exec("find " + chart_dir + " -type f -name '*.yaml'").strip().split("\n") # -exec sh -c '" + esh_bin + " {} > {}.esh_temp && mv {}.esh_temp {}' \;")
             #files.extend(exec("find " + os.path.join(chart_dir, "kush") + " -type f").strip().split("\n")) # -exec sh -c '" + esh_bin + " {} > {}.esh_temp && mv {}.esh_temp {}' \;")
@@ -207,6 +203,10 @@ with tempfile.TemporaryDirectory() as tempdir:
                 if filename != "":
                     exec(esh_bin + " " + filename + " > " + filename + ".esh_temp && mv " + filename + ".esh_temp " + filename)
     
+            # execute .pre.sh files in the kush dir (prior to interpolation),
+            # updating the environment if they export anything
+            source_files_glob(os.path.join(chart_dir, "kush", "*.pre.sh"))
+            
         # ok! now we can run their helm command with the post-rendere
         
         post_renderer = os.path.join(os.environ["HELM_PLUGIN_DIR"], "bin", "post-renderer.sh")
