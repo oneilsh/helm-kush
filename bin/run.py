@@ -230,14 +230,14 @@ with tempfile.TemporaryDirectory() as tempdir:
             usage()
             exit(1)
         kush_script = args[1]
-        if os.path.isfile(os.path.join(chart_dir, "kush", kush_script)):
+        if os.path.isfile(os.path.join(chart_dir, "kush", kush_script + ".runnable")):
             source_args = " ".join(["'" + arg + "'" for arg in args[2:]])     # the first element will be the script name itself
-            source(os.path.join(chart_dir, "kush", kush_script) + " " + source_args) 
+            source(os.path.join(chart_dir, "kush", kush_script + ".runnable") + " " + source_args) 
         else: # no matching script found, so let's list the possibilities (all files not matching .yaml, .pre.sh, .post.sh)
             sys.stderr.write("Options for run:\n")
             for filename in glob.glob(os.path.join(chart_dir, "kush", "*")):
-                if not re.search(r"(\.yaml$)|(\.pre\.sh$)|(\.post\.sh$)", filename):
-                    sys.stderr.write("  helm kush run " + os.path.basename(filename) + " " + chart + " ...\n")
+                if re.search(r"\.runnable$", filename):
+                    sys.stderr.write("  helm kush run " + re.subn(r"\.runnable$", "", os.path.basename(filename))[0] + " " + chart + " ...\n")
             exit(1)
         
     else:
