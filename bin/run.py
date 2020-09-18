@@ -197,8 +197,8 @@ with tempfile.TemporaryDirectory() as tempdir:
         # we only want to run .pre.sh scripts if they are running a 
         if interpolate: 
             
-            files = exec("find " + chart_dir + " -type f -name '*.yaml'").strip().split("\n") # -exec sh -c '" + esh_bin + " {} > {}.esh_temp && mv {}.esh_temp {}' \;")
-            #files.extend(exec("find " + os.path.join(chart_dir, "kush") + " -type f").strip().split("\n")) # -exec sh -c '" + esh_bin + " {} > {}.esh_temp && mv {}.esh_temp {}' \;")
+            # first: handle the user's custom values files
+            files = exec("find " + os.path.join(chart_dir, "user_values_files") + " -type f -name '*.yaml'").strip().split("\n") # -exec sh -c '" + esh_bin + " {} > {}.esh_temp && mv {}.esh_temp {}' \;")
             for filename in files:
                 if filename != "":
                     exec(esh_bin + " " + filename + " > " + filename + ".esh_temp && mv " + filename + ".esh_temp " + filename)
@@ -207,6 +207,11 @@ with tempfile.TemporaryDirectory() as tempdir:
             # updating the environment if they export anything
             source_files_glob(os.path.join(chart_dir, "kush", "*.pre.sh"))
             
+            # *then* do any other yaml files (redoing the user_values_files for no particular reason)
+            files = exec("find " + chart_dir + " -type f -name '*.yaml'").strip().split("\n") # -exec sh -c '" + esh_bin + " {} > {}.esh_temp && mv {}.esh_temp {}' \;")
+            for filename in files:
+                if filename != "":
+                    exec(esh_bin + " " + filename + " > " + filename + ".esh_temp && mv " + filename + ".esh_temp " + filename)
         # ok! now we can run their helm command with the post-rendere
         
         post_renderer = os.path.join(os.environ["HELM_PLUGIN_DIR"], "bin", "post-renderer.sh")
